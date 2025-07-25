@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import "./App.css";
+import { setDoc, doc, getDoc } from "firebase/firestore";
+import { db } from "./firebase";
+
 import { auth, provider } from "./firebase";
 import {
   signInWithPopup,
@@ -34,13 +37,39 @@ function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const saveUserHourlyRate = async (userEmail, rate) => {
+    const ref = doc(db, "users", userEmail, "settings", "hourly");
+    await setDoc(ref, { rate });
+  };
+
+  const loadUserHourlyRate = async (userEmail) => {
+    const ref = doc(db, "users", userEmail, "settings", "hourly");
+    const snap = await getDoc(ref);
+    return snap.exists() ? snap.data().rate : 25.63;
+  };
+  
+ // 稅率
+  const loadUserTaxRate = async (userEmail) => {
+    const ref = doc(db, "users", userEmail, "settings", "tax");
+    const snap = await getDoc(ref);
+    return snap.exists() ? snap.data().rate : 13;
+  };
+
   useEffect(() => {
     localStorage.setItem("workLog", JSON.stringify(workLog));
   }, [workLog]);
 
+  // 時薪
   useEffect(() => {
-    onAuthStateChanged(auth, (currentUser) => {
+    onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        const tax = await loadUserTaxRate(currentUser.email);
+        setTaxRate(tax);
+
+        const hourly = await loadUserHourlyRate(currentUser.email);
+        setHourlyRate(hourly);
+      }
     });
   }, []);
 
@@ -224,88 +253,94 @@ function App() {
             </div>
 
             {activeButton === "add_time" && (
-                <div className="add_time wrapper">
-                  <div className="date">
-                    <Calendar onChange={setSelectedDate} value={selectedDate} />
-                  </div>
-                  <div className="movediv">
-                    <p className="mt-4 text-center font-semibold">
-                      選擇日期：{selectedDate.toDateString()}
-                    </p>
+              <div className="add_time wrapper">
+                <div className="date">
+                  <Calendar onChange={setSelectedDate} value={selectedDate} />
+                </div>
+                <div className="movediv">
+                  <p className="mt-4 text-center font-semibold">
+                    選擇日期：{selectedDate.toDateString()}
+                  </p>
 
-                    <div className="forinput">
-                      <div className="coolinput">
-                        <label htmlFor="input" className="text">
-                          起始時間:
-                        </label>
-                        <input
-                          type="time"
-                          value={startTime}
-                          onChange={(e) => setStartTime(e.target.value)}
-                          name="input"
-                          className="input"
-                        />
-                      </div>
-                      <div className="coolinput">
-                        <label htmlFor="input" className="text">
-                          結束時間:
-                        </label>
-                        <input
-                          type="time"
-                          value={endTime}
-                          onChange={(e) => setEndTime(e.target.value)}
-                          name="input"
-                          className="input"
-                        />
-                      </div>
-                      <div className="coolinput">
-                        <label htmlFor="input" className="text">
-                          時薪:
-                        </label>
-                        <input
-                          type="number"
-                          value={hourlyRate}
-                          onChange={(e) =>
-                            setHourlyRate(Number(e.target.value))
-                          }
-                          name="input"
-                          className="input"
-                        />
-                      </div>
-                      <div className="coolinput">
-                        <label htmlFor="input" className="text">
-                          稅率%:
-                        </label>
-                        <input
-                          type="number"
-                          value={taxRate}
-                          onChange={(e) => setTaxRate(Number(e.target.value))}
-                          name="input"
-                          className="input"
-                        />
-                      </div>
-
-                      <button
-                        onClick={handleSave}
-                        className="w-full bg-blue-600 text-white p-2 rounded"
-                      >
-                        {editingDate ? "更新紀錄" : "儲存今日紀錄"}
-                      </button>
+                  <div className="forinput">
+                    <div className="coolinput">
+                      <label htmlFor="input" className="text">
+                        起始時間:
+                      </label>
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        name="input"
+                        className="input"
+                      />
                     </div>
-                  </div>
+                    <div className="coolinput">
+                      <label htmlFor="input" className="text">
+                        結束時間:
+                      </label>
+                      <input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        name="input"
+                        className="input"
+                      />
+                    </div>
+                    <div className="coolinput">
+                      <label htmlFor="input" className="text">
+                        時薪:
+                      </label>
+                      <input
+                        type="number"
+                        value={hourlyRate}
+                        onChange={(e) => {
+                          const newRate = Number(e.target.value);
+                          setHourlyRate(newRate);
+                          if (user) saveUserHourlyRate(user.email, newRate);
+                        }}
+                        name="input"
+                        className="input"
+                      />
+                    </div>
+                    <div className="coolinput">
+                      <label htmlFor="input" className="text">
+                        稅率%:
+                      </label>
+                      <input
+                        type="number"
+                        value={taxRate}
+                        onChange={(e) => {
+                          const newRate = Number(e.target.value);
+                          setTaxRate(newRate);
+                          if (user) saveUserTaxRate(user.email, newRate);
+                        }}
+                        name="input"
+                        className="input"
+                      />
+                    </div>
 
-                  <div className="mt-6 two_week">
-                    <h2 className="font-bold mb-2">🧾 兩週統計</h2>
-                    <p>
-                      總工時：<strong>{totalHours.toFixed(2)}</strong> 小時
-                    </p>
-                    <p>
-                      稅前薪水：<strong>${totalGross.toFixed(2)}</strong>
-                    </p>
-                    <p>
-                      稅後薪水：<strong>${totalNet.toFixed(2)}</strong>
-                    </p>
+                    <button
+                      onClick={handleSave}
+                      className="w-full bg-blue-600 text-white p-2 rounded"
+                    >
+                      {editingDate ? "更新紀錄" : "儲存今日紀錄"}
+                    </button>
                   </div>
+                </div>
+
+                <div className="mt-6 two_week">
+                  <h2 className="font-bold mb-2">🧾 兩週統計</h2>
+                  <p>
+                    總工時：<strong>{totalHours.toFixed(2)}</strong> 小時
+                  </p>
+                  <p>
+                    稅前薪水：<strong>${totalGross.toFixed(2)}</strong>
+                  </p>
+                  <p>
+                    稅後薪水：<strong>${totalNet.toFixed(2)}</strong>
+                  </p>
+                </div>
               </div>
             )}
 
