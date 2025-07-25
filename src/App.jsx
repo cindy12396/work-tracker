@@ -14,15 +14,18 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
+  CartesianGrid,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 
 function App() {
+  const [darkMode, setDarkMode] = useState(false); //主題狀態
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -47,8 +50,8 @@ function App() {
     const snap = await getDoc(ref);
     return snap.exists() ? snap.data().rate : 25.63;
   };
-  
- // 稅率
+
+  // 稅率
   const loadUserTaxRate = async (userEmail) => {
     const ref = doc(db, "users", userEmail, "settings", "tax");
     const snap = await getDoc(ref);
@@ -197,6 +200,14 @@ function App() {
             {/* ---------------------------分頁按鈕css---start------------------------ */}
 
             <div className="container">
+              <div className="absolute top-4 right-4">
+                <button
+                  onClick={() => setDarkMode(!darkMode)}
+                  className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                >
+                  {darkMode ? "🌞 淺色模式" : "🌙 深色模式"}
+                </button>
+              </div>
               <div
                 className="radio-wrapper"
                 onClick={() => setActiveButton("add_time")}
@@ -347,19 +358,61 @@ function App() {
             {activeButton === "work_chart" && (
               <div className="mt-6 work_chart">
                 <h2 className="font-bold mb-2">📊 工時圖表</h2>
-                <div className="h-72 bg-white rounded shadow p-2">
+                <div className="h-80 bg-white rounded-lg shadow-lg p-4 dark:bg-gray-800 chart-wrapper">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
+                    <LineChart
                       data={recentLog.map((entry) => ({
                         name: entry.date.slice(5),
-                        hours: parseFloat(entry.hours).toFixed(1),
+                        hours: parseFloat(entry.hours),
+                        salary: parseFloat(
+                          (entry.hours * entry.rate).toFixed(2)
+                        ),
                       }))}
+                      margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
                     >
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="hours" fill="#3b82f6" />
-                    </BarChart>
+                      <XAxis dataKey="name" stroke="#94a3b8" />
+                      <YAxis stroke="#94a3b8" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#f9fafb",
+                          borderRadius: "0.5rem",
+                        }}
+                        labelStyle={{ fontWeight: "bold" }}
+                      />
+                      <Legend verticalAlign="top" height={36} />
+
+                      <Line
+                        type="monotone"
+                        dataKey="hours"
+                        name="工時"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dot={{
+                          r: 4,
+                          fill: "#fff",
+                          stroke: "#3b82f6",
+                          strokeWidth: 2,
+                        }}
+                        activeDot={{ r: 6 }}
+                        animationDuration={500}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="salary"
+                        name="薪水"
+                        stroke="#f59e0b"
+                        strokeWidth={2}
+                        dot={{
+                          r: 4,
+                          fill: "#fff",
+                          stroke: "#f59e0b",
+                          strokeWidth: 2,
+                        }}
+                        activeDot={{ r: 6 }}
+                        animationDuration={800}
+                      />
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               </div>
