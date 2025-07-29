@@ -25,7 +25,7 @@ import {
 } from "recharts";
 
 function App() {
-  const [darkMode, setDarkMode] = useState(false); //主題狀態
+  const [bgClass, setBgClass] = useState("bg-white");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -153,308 +153,325 @@ function App() {
 
   const [activeButton, setActiveButton] = useState("add_time");
   return (
-    <div className="">
-      <div className="">
-        {!user ? (
-          <>
-            <h2 className="text-xl font-bold mb-4">🔐 請登入</h2>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="border p-2 w-full mb-2"
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="border p-2 w-full mb-2"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={loginWithEmail}
-                className="flex-1 bg-blue-500 text-white p-2 rounded"
-              >
-                登入
-              </button>
-              <button
-                onClick={registerWithEmail}
-                className="flex-1 bg-green-500 text-white p-2 rounded"
-              >
-                註冊
-              </button>
-            </div>
-            <div className="text-center mt-3">
-              <button
-                onClick={signInWithGoogle}
-                className="text-blue-600 underline"
-              >
-                使用 Google 登入
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* ---------------------------分頁按鈕css---start------------------------ */}
-
-            <div className="container">
-              <div className="absolute top-4 right-4">
+    <div className={`min-h-screen ${bgClass}`}>
+      <div className="p-6">
+        <div className="bg-white rounded-lg shadow-lg p-4">
+          <button
+            onClick={() => {
+              const newClass =
+                bgClass === "bg-white" ? "bg-green-50" : "bg-white";
+              console.log("🔄 切換背景為:", newClass);
+              setBgClass(newClass);
+            }}
+            className="px-3 py-1 bg-white border text-sm rounded mb-4 shadow"
+          >
+            切換背景顏色
+          </button>
+          {!user ? (
+            <>
+              <h2 className="text-xl font-bold mb-4">🔐 請登入</h2>
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="border p-2 w-full mb-2"
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="border p-2 w-full mb-2"
+              />
+              <div className="flex gap-2">
                 <button
-                  onClick={() => setDarkMode(!darkMode)}
-                  className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                  onClick={loginWithEmail}
+                  className="flex-1 bg-blue-500 text-white p-2 rounded"
                 >
-                  {darkMode ? "🌞 淺色模式" : "🌙 深色模式"}
+                  登入
+                </button>
+                <button
+                  onClick={registerWithEmail}
+                  className="flex-1 bg-green-500 text-white p-2 rounded"
+                >
+                  註冊
                 </button>
               </div>
-              <div
-                className="radio-wrapper"
-                onClick={() => setActiveButton("add_time")}
-              >
-                <input type="radio" id="value-1" name="btn" className="input" />
-                <div className="btn">
-                  <span aria-hidden="">_</span>兩週統計
-                  <span aria-hidden="" className="btn__glitch">
-                    兩週統計
-                  </span>
-                  <label className="number">r1</label>
-                </div>
+              <div className="text-center mt-3">
+                <button
+                  onClick={signInWithGoogle}
+                  className="text-blue-600 underline"
+                >
+                  使用 Google 登入
+                </button>
               </div>
-              <div
-                className="radio-wrapper"
-                onClick={() => setActiveButton("work_chart")}
-              >
-                <input
-                  type="radio"
-                  defaultChecked={true}
-                  id="value-2"
-                  name="btn"
-                  className="input"
-                />
-                <div className="btn">
-                  _工時圖表<span aria-hidden="">_</span>
-                  <span aria-hidden="" className="btn__glitch">
-                    工時圖表
-                  </span>
-                  <label className="number">r2</label>
-                </div>
-              </div>
-              <div
-                className="radio-wrapper"
-                onClick={() => setActiveButton("history")}
-              >
-                <input type="radio" id="value-3" name="btn" className="input" />
-                <div className="btn">
-                  歷史紀錄<span aria-hidden=""></span>
-                  <span aria-hidden="" className="btn__glitch">
-                    歷史紀錄_
-                  </span>
-                  <label className="number">r3</label>
-                </div>
-              </div>
-            </div>
-            {/* ---------------------------分頁按鈕css---start------------------------*/}
+            </>
+          ) : (
+            <>
+              {/* ---------------------------分頁按鈕css---start------------------------ */}
 
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-xl font-bold">🧮 {user.email} 的工時紀錄</h1>
-              <article className="keycap" onClick={logout}>
-                <aside className="letter">登出</aside>
-              </article>
-            </div>
-
-            {activeButton === "add_time" && (
-              <div className="add_time wrapper">
-                <div className="date">
-                  <Calendar onChange={setSelectedDate} value={selectedDate} />
-                </div>
-                <div className="movediv">
-                  <p className="mt-4 text-center font-semibold">
-                    選擇日期：{selectedDate.toDateString()}
-                  </p>
-
-                  <div className="forinput">
-                    <div className="coolinput">
-                      <label htmlFor="input" className="text">
-                        起始時間:
-                      </label>
-                      <input
-                        type="time"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                        name="input"
-                        className="input"
-                      />
-                    </div>
-                    <div className="coolinput">
-                      <label htmlFor="input" className="text">
-                        結束時間:
-                      </label>
-                      <input
-                        type="time"
-                        value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
-                        name="input"
-                        className="input"
-                      />
-                    </div>
-                    <div className="coolinput">
-                      <label htmlFor="input" className="text">
-                        時薪:
-                      </label>
-                      <input
-                        type="number"
-                        value={hourlyRate}
-                        onChange={(e) => {
-                          const newRate = Number(e.target.value);
-                          setHourlyRate(newRate);
-                          if (user) saveUserHourlyRate(user.email, newRate);
-                        }}
-                        name="input"
-                        className="input"
-                      />
-                    </div>
-                    <div className="coolinput">
-                      <label htmlFor="input" className="text">
-                        稅率%:
-                      </label>
-                      <input
-                        type="number"
-                        value={taxRate}
-                        onChange={(e) => {
-                          const newRate = Number(e.target.value);
-                          setTaxRate(newRate);
-                          if (user) saveUserTaxRate(user.email, newRate);
-                        }}
-                        name="input"
-                        className="input"
-                      />
-                    </div>
-
-                    <button
-                      onClick={handleSave}
-                      className="w-full bg-blue-600 text-white p-2 rounded"
-                    >
-                      {editingDate ? "更新紀錄" : "儲存今日紀錄"}
-                    </button>
+              <div className="container">
+                <div
+                  className="radio-wrapper"
+                  onClick={() => setActiveButton("add_time")}
+                >
+                  <input
+                    type="radio"
+                    id="value-1"
+                    name="btn"
+                    className="input"
+                  />
+                  <div className="btn">
+                    <span aria-hidden="">_</span>兩週統計
+                    <span aria-hidden="" className="btn__glitch">
+                      兩週統計
+                    </span>
+                    <label className="number">r1</label>
                   </div>
                 </div>
-
-                <div className="mt-6 two_week">
-                  <h2 className="font-bold mb-2">🧾 兩週統計</h2>
-                  <p>
-                    總工時：<strong>{totalHours.toFixed(2)}</strong> 小時
-                  </p>
-                  <p>
-                    稅前薪水：<strong>${totalGross.toFixed(2)}</strong>
-                  </p>
-                  <p>
-                    稅後薪水：<strong>${totalNet.toFixed(2)}</strong>
-                  </p>
+                <div
+                  className="radio-wrapper"
+                  onClick={() => setActiveButton("work_chart")}
+                >
+                  <input
+                    type="radio"
+                    defaultChecked={true}
+                    id="value-2"
+                    name="btn"
+                    className="input"
+                  />
+                  <div className="btn">
+                    _工時圖表<span aria-hidden="">_</span>
+                    <span aria-hidden="" className="btn__glitch">
+                      工時圖表
+                    </span>
+                    <label className="number">r2</label>
+                  </div>
+                </div>
+                <div
+                  className="radio-wrapper"
+                  onClick={() => setActiveButton("history")}
+                >
+                  <input
+                    type="radio"
+                    id="value-3"
+                    name="btn"
+                    className="input"
+                  />
+                  <div className="btn">
+                    歷史紀錄<span aria-hidden=""></span>
+                    <span aria-hidden="" className="btn__glitch">
+                      歷史紀錄_
+                    </span>
+                    <label className="number">r3</label>
+                  </div>
                 </div>
               </div>
-            )}
+              {/* ---------------------------分頁按鈕css---start------------------------*/}
 
-            {activeButton === "work_chart" && (
-              <div className="mt-6 work_chart">
-                <h2 className="font-bold mb-2">📊 工時圖表</h2>
-                <div className="h-80 bg-white rounded-lg shadow-lg p-4 dark:bg-gray-800 chart-wrapper">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={recentLog.map((entry) => ({
-                        name: entry.date.slice(5),
-                        hours: parseFloat(entry.hours),
-                        salary: parseFloat(
-                          (entry.hours * entry.rate).toFixed(2)
-                        ),
-                      }))}
-                      margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-                    >
-                      <XAxis dataKey="name" stroke="#94a3b8" />
-                      <YAxis stroke="#94a3b8" />
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "#f9fafb",
-                          borderRadius: "0.5rem",
-                        }}
-                        labelStyle={{ fontWeight: "bold" }}
-                      />
-                      <Legend verticalAlign="top" height={36} />
-
-                      <Line
-                        type="monotone"
-                        dataKey="hours"
-                        name="工時"
-                        stroke="#3b82f6"
-                        strokeWidth={2}
-                        dot={{
-                          r: 4,
-                          fill: "#fff",
-                          stroke: "#3b82f6",
-                          strokeWidth: 2,
-                        }}
-                        activeDot={{ r: 6 }}
-                        animationDuration={500}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="salary"
-                        name="薪水"
-                        stroke="#f59e0b"
-                        strokeWidth={2}
-                        dot={{
-                          r: 4,
-                          fill: "#fff",
-                          stroke: "#f59e0b",
-                          strokeWidth: 2,
-                        }}
-                        activeDot={{ r: 6 }}
-                        animationDuration={800}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+              <div className="flex justify-between items-center mb-4">
+                <h1 className="text-xl font-bold">
+                  🧮 {user.email} 的工時紀錄
+                </h1>
+                <article className="keycap" onClick={logout}>
+                  <aside className="letter">登出</aside>
+                </article>
               </div>
-            )}
 
-            {activeButton === "history" && (
-              <div className="mt-6 history">
-                <h2 className="font-bold mb-2">📋 歷史紀錄</h2>
-                <ul className="max-h-40 overflow-y-auto text-sm">
-                  {recentLog
-                    .sort((a, b) => new Date(b.date) - new Date(a.date))
-                    .map((log) => (
-                      <li
-                        key={log.date}
-                        className="border-b pb-1 mb-1 flex justify-between items-center"
+              {activeButton === "add_time" && (
+                <div className="add_time wrapper">
+                  <div className="date">
+                    <Calendar onChange={setSelectedDate} value={selectedDate} />
+                  </div>
+                  <div className="movediv">
+                    <p className="mt-4 text-center font-semibold">
+                      選擇日期：{selectedDate.toDateString()}
+                    </p>
+
+                    <div className="forinput">
+                      <div className="coolinput">
+                        <label htmlFor="input" className="text">
+                          起始時間:
+                        </label>
+                        <input
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                          name="input"
+                          className="input"
+                        />
+                      </div>
+                      <div className="coolinput">
+                        <label htmlFor="input" className="text">
+                          結束時間:
+                        </label>
+                        <input
+                          type="time"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                          name="input"
+                          className="input"
+                        />
+                      </div>
+                      <div className="coolinput">
+                        <label htmlFor="input" className="text">
+                          時薪:
+                        </label>
+                        <input
+                          type="number"
+                          value={hourlyRate}
+                          onChange={(e) => {
+                            const newRate = Number(e.target.value);
+                            setHourlyRate(newRate);
+                            if (user) saveUserHourlyRate(user.email, newRate);
+                          }}
+                          name="input"
+                          className="input"
+                        />
+                      </div>
+                      <div className="coolinput">
+                        <label htmlFor="input" className="text">
+                          稅率%:
+                        </label>
+                        <input
+                          type="number"
+                          value={taxRate}
+                          onChange={(e) => {
+                            const newRate = Number(e.target.value);
+                            setTaxRate(newRate);
+                            if (user) saveUserTaxRate(user.email, newRate);
+                          }}
+                          name="input"
+                          className="input"
+                        />
+                      </div>
+
+                      <button
+                        onClick={handleSave}
+                        className="w-full bg-blue-600 text-white p-2 rounded"
                       >
-                        <div>
-                          {log.date}｜{log.startTime} ~ {log.endTime}｜
-                          {log.hours}
-                          h｜${log.rate}/hr
-                        </div>
-                        <div className="flex space-x-2 ml-2">
-                          <button
-                            onClick={() => handleEdit(log)}
-                            className="text-blue-600 hover:underline text-xs"
-                          >
-                            編輯
-                          </button>
-                          <button
-                            onClick={() => handleDelete(log.date)}
-                            className="text-red-600 hover:underline text-xs"
-                          >
-                            刪除
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                </ul>
-              </div>
-            )}
-          </>
-        )}
+                        {editingDate ? "更新紀錄" : "儲存今日紀錄"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 two_week">
+                    <h2 className="font-bold mb-2">🧾 兩週統計</h2>
+                    <p>
+                      總工時：<strong>{totalHours.toFixed(2)}</strong> 小時
+                    </p>
+                    <p>
+                      稅前薪水：<strong>${totalGross.toFixed(2)}</strong>
+                    </p>
+                    <p>
+                      稅後薪水：<strong>${totalNet.toFixed(2)}</strong>
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {activeButton === "work_chart" && (
+                <div className="mt-6 work_chart">
+                  <h2 className="font-bold mb-2">📊 工時圖表</h2>
+                  <div className="h-80 bg-white rounded-lg shadow-lg p-4 dark:bg-gray-800 chart-wrapper">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={recentLog.map((entry) => ({
+                          name: entry.date.slice(5),
+                          hours: parseFloat(entry.hours),
+                          salary: parseFloat(
+                            (entry.hours * entry.rate).toFixed(2)
+                          ),
+                        }))}
+                        margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                      >
+                        <XAxis dataKey="name" stroke="#94a3b8" />
+                        <YAxis stroke="#94a3b8" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#f9fafb",
+                            borderRadius: "0.5rem",
+                          }}
+                          labelStyle={{ fontWeight: "bold" }}
+                        />
+                        <Legend verticalAlign="top" height={36} />
+
+                        <Line
+                          type="monotone"
+                          dataKey="hours"
+                          name="工時"
+                          stroke="#3b82f6"
+                          strokeWidth={2}
+                          dot={{
+                            r: 4,
+                            fill: "#fff",
+                            stroke: "#3b82f6",
+                            strokeWidth: 2,
+                          }}
+                          activeDot={{ r: 6 }}
+                          animationDuration={500}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="salary"
+                          name="薪水"
+                          stroke="#f59e0b"
+                          strokeWidth={2}
+                          dot={{
+                            r: 4,
+                            fill: "#fff",
+                            stroke: "#f59e0b",
+                            strokeWidth: 2,
+                          }}
+                          activeDot={{ r: 6 }}
+                          animationDuration={800}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+
+              {activeButton === "history" && (
+                <div className="mt-6 history">
+                  <h2 className="font-bold mb-2">📋 歷史紀錄</h2>
+                  <ul className="max-h-40 overflow-y-auto text-sm">
+                    {recentLog
+                      .sort((a, b) => new Date(b.date) - new Date(a.date))
+                      .map((log) => (
+                        <li
+                          key={log.date}
+                          className="border-b pb-1 mb-1 flex justify-between items-center"
+                        >
+                          <div>
+                            {log.date}｜{log.startTime} ~ {log.endTime}｜
+                            {log.hours}
+                            h｜${log.rate}/hr
+                          </div>
+                          <div className="flex space-x-2 ml-2">
+                            <button
+                              onClick={() => handleEdit(log)}
+                              className="text-blue-600 hover:underline text-xs"
+                            >
+                              編輯
+                            </button>
+                            <button
+                              onClick={() => handleDelete(log.date)}
+                              className="text-red-600 hover:underline text-xs"
+                            >
+                              刪除
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
