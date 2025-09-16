@@ -5,6 +5,7 @@ import "./App.css";
 import { setDoc, doc, getDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import { auth, provider } from "./firebase";
+import ThemeToggle from "./ThemeToggle";
 import {
   signInWithPopup,
   signOut,
@@ -24,7 +25,7 @@ import {
 } from "recharts";
 
 function App() {
-  const [bgClass, setBgClass] = useState("bg-slate-100");
+  const [darkMode, setDarkMode] = useState(false); //背景
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -39,10 +40,15 @@ function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [hasBreak, setHasBreak] = useState(false); // 有無休息
-  const [modalOpen, setModalOpen] = useState(false); // 新增 modal 相關(編輯按鈕)
-  const [editRecord, setEditRecord] = useState(null); // 新增 modal 相關(編輯按鈕)
   const [rested, setRested] = useState(false);
-
+  const [showModal, setShowModal] = useState(false); // 編輯按鈕
+  const [editingStartTime, setEditingStartTime] = useState(""); // 宣告編輯起始時間
+  const [editingEndTime, setEditingEndTime] = useState(""); // 宣告編輯結束時間
+  const [editingRate, setEditingRate] = useState(hourlyRate); // 宣告編輯時長
+  const [editingTaxRate, setEditingTaxRate] = useState(taxRate); // 宣告編輯稅率
+  const [editingRested, setEditingRested] = useState(false); // 母雞斗
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 月份選擇器
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); // 月份選擇器
   const saveUserHourlyRate = async (userEmail, rate) => {
     const ref = doc(db, "users", userEmail, "settings", "hourly");
     await setDoc(ref, { rate });
@@ -72,28 +78,11 @@ function App() {
       if (currentUser) {
         const tax = await loadUserTaxRate(currentUser.email);
         setTaxRate(tax);
-
         const hourly = await loadUserHourlyRate(currentUser.email);
         setHourlyRate(hourly);
       }
     });
   }, []);
-
-  useEffect(() => {
-    document.body.style.backgroundColor =
-      bgClass === "bg-green" ? "#f0fdf4" : "#ffffff";
-    console.log(document.body.style.backgroundColor);
-  }, [bgClass]);
-
-  const openEditModal = (log) => {
-    setEditRecord(log);
-    setModalOpen(true);
-  };
-
-  const closeEditModal = () => {
-    setModalOpen(false);
-    setEditRecord(null);
-  };
 
   const signInWithGoogle = () => {
     signInWithPopup(auth, provider).catch(alert);
@@ -124,16 +113,22 @@ function App() {
     return hours;
   };
 
+  // 歷史紀錄之選擇月份
+  const monthLog = workLog.filter((log) => {
+    const date = new Date(log.date);
+    return (
+      date.getMonth() === selectedMonth && date.getFullYear() === selectedYear
+    );
+  });
+
   const handleSave = () => {
     const hours = calculateHours();
     if (hours <= 0) {
       alert("⚠️ 請輸入正確的時間！");
       return;
     }
-
     const dateStr = editingDate || selectedDate.toDateString();
     const updatedLog = workLog.filter((log) => log.date !== dateStr);
-
     setWorkLog([
       ...updatedLog,
       {
@@ -145,57 +140,72 @@ function App() {
         break: hasBreak, //有無休息
       },
     ]);
-
     setStartTime("");
     setEndTime("");
     setEditingDate(null);
   };
 
+  // 當編輯按下去時，會把log帶值進去popup window裡
   const handleEdit = (log) => {
-  setSelectedDate(new Date(log.date));
-  setStartTime(log.startTime);
-  setEndTime(log.endTime);
-  setHourlyRate(log.rate);
-  setRested(log.rested || false);   // 預設 false
-  setTaxRate(log.taxRate || 13);    // 預設稅率
-  setEditingDate(log.date);
-  setShowModal(true);               // 打開 modal
-};
+    setSelectedDate(new Date(log.date));
+    setEditingDate(log.date);
+    setEditingStartTime(log.startTime);
+    setEditingEndTime(log.endTime);
+    setEditingRate(log.rate);
+    setEditingTaxRate(log.taxRate || 13);
+    setEditingRested(log.rested || false);
+    setShowModal(true);
+  };
 
-  // 編輯
-const handleEditSave = () => {
-  let hours = calculateHours();
-  if (hours <= 0) {
-    alert("⚠️ 請輸入正確的時間！");
-    return;
+  // 編輯成功後計算工時，並更新editedHours
+  const [editingHasBreak, setEditingHasBreak] = useState(false);
+  const calculateEditHours = () => {
+    if (!editingStartTime || !editingEndTime) return 0;
+    const [startH, startM] = editingStartTime.split(":").map(Number);
+    const [endH, endM] = editingEndTime.split(":").map(Number);
+    let minutes = endH * 60 + endM - (startH * 60 + startM);
+    if (minutes < 0) minutes += 24 * 60;
+    return minutes / 60;
+  };
+  let editedHours = calculateEditHours(); // 先計算工時
+  if (editingHasBreak) {
+    editedHours -= 0.5;
   }
 
-  if (rested) {
-    hours = Math.max(0, hours - 0.5);
-  }
+  // popup window的儲存按鈕
+  const handleEditSave = () => {
+    if (!editingStartTime || !editingEndTime) return;
 
-  const dateStr = editingDate || selectedDate.toDateString();
-  const updatedLog = workLog.filter((log) => log.date !== dateStr);
+    const [startH, startM] = editingStartTime.split(":").map(Number);
+    const [endH, endM] = editingEndTime.split(":").map(Number);
+    let minutes = endH * 60 + endM - (startH * 60 + startM);
+    if (minutes < 0) minutes += 24 * 60;
 
-  setWorkLog([
-    ...updatedLog,
-    {
-      date: dateStr,
-      startTime,
-      endTime,
-      hours,
-      rate: hourlyRate,
-      taxRate,
-      rested,
-    },
-  ]);
+    let hours = minutes / 60;
+    if (editingRested) hours -= 0.5;
 
-  setStartTime("");
-  setEndTime("");
-  setEditingDate(null);
-  setShowModal(false);
-};
+    if (hours <= 0) {
+      alert("⚠️ 請輸入正確的時間！");
+      return;
+    }
 
+    const updatedLog = workLog.filter((log) => log.date !== editingDate);
+
+    setWorkLog([
+      ...updatedLog,
+      {
+        date: editingDate,
+        startTime: editingStartTime,
+        endTime: editingEndTime,
+        hours: editedHours,
+        rate: editingRate,
+        taxRate: editingTaxRate,
+        rested: editingRested,
+      },
+    ]);
+
+    setShowModal(false);
+  };
 
   // helper to 計算 hours（加入休息時間扣半小時）
   const calculateHoursFor = (startTime, endTime, hasBreak) => {
@@ -229,21 +239,49 @@ const handleEditSave = () => {
   );
   const totalNet = totalGross * (1 - taxRate / 100);
 
+  // 動畫
+  const [isClosing, setIsClosing] = useState(false);
+  const closeModal = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setModalOpen(false);
+      setEditRecord(null);
+      setIsClosing(false);
+    }, 200); // 跟 CSS 動畫時長一致
+  };
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
   const [activeButton, setActiveButton] = useState("add_time");
+
+  // 背景顏色
+  const ThemeToggle = () => {
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved) return saved === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [darkMode]);
+
   return (
-    <div className={`w-full h-full ${bgClass}`}>
-      <div className="p-6">
+    <div className={`${darkMode ? "dark" : ""}`}>
+      <div className="">
         <button
-          onClick={() => {
-            const newClass =
-              bgClass === "bg-white" ? "bg-slate-100" : "bg-white";
-            setBgClass(newClass);
-          }}
-          className="px-3 py-1 bg-white border text-sm rounded mb-4 shadow"
+          onClick={() => setDarkMode(!darkMode)}
+          className="px-3 py-1 bg-gray-200 text-sm rounded shadow mb-4"
         >
-          切換背景顏色
+          {darkMode ? "🌞 淺色模式" : "🌙 深色模式"}
         </button>
-        <p className="text-sm text-gray-500">🔍 現在背景：{bgClass}</p>
         {!user ? (
           <>
             <h2 className="text-xl font-bold mb-4">🔐 請登入</h2>
@@ -349,13 +387,13 @@ const handleEditSave = () => {
                 <div className="date">
                   <Calendar onChange={setSelectedDate} value={selectedDate} />
                 </div>
-                <div className="movediv">
+                <div className="modal-content">
                   <p className="mt-4 text-center font-semibold">
                     選擇日期：{selectedDate.toDateString()}
                   </p>
 
                   <div className="forinput">
-                    <div className="coolinput">
+                    <div>
                       <label htmlFor="input" className="text">
                         起始時間:
                       </label>
@@ -367,7 +405,7 @@ const handleEditSave = () => {
                         className="input"
                       />
                     </div>
-                    <div className="coolinput">
+                    <div>
                       <label htmlFor="input" className="text">
                         結束時間:
                       </label>
@@ -379,7 +417,7 @@ const handleEditSave = () => {
                         className="input"
                       />
                     </div>
-                    <div className="coolinput">
+                    <div>
                       <label htmlFor="input" className="text">
                         時薪:
                       </label>
@@ -404,7 +442,7 @@ const handleEditSave = () => {
                       />
                       <label htmlFor="hasBreak">今天有休息半小時</label>
                     </div>
-                    <div className="coolinput">
+                    <div>
                       <label htmlFor="input" className="text">
                         稅率%:
                       </label>
@@ -511,8 +549,37 @@ const handleEditSave = () => {
             {activeButton === "history" && (
               <div className="mt-6 history">
                 <h2 className="font-bold mb-2">📋 歷史紀錄</h2>
+                <div className="mb-4 flex justify-center gap-2">
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                    className="border rounded px-2 py-1"
+                  >
+                    {Array.from({ length: 5 }).map((_, i) => {
+                      const year = new Date().getFullYear() - i;
+                      return (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                    className="border rounded px-2 py-1"
+                  >
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <option key={i} value={i}>
+                        {i + 1} 月
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <ul className="max-h-40 overflow-y-auto text-sm">
-                  {recentLog
+                  {monthLog
                     .sort((a, b) => new Date(b.date) - new Date(a.date))
                     .map((log) => (
                       <li
@@ -521,12 +588,11 @@ const handleEditSave = () => {
                       >
                         <div>
                           {log.date}｜{log.startTime} ~ {log.endTime}｜
-                          {log.hours.toFixed(2)}
-                          h｜${log.rate}/hr
+                          {log.hours.toFixed(2)}h｜${log.rate}/hr
                         </div>
                         <div className="flex space-x-2 ml-2">
                           <button
-                            onClick={() => openEditModal(log)}
+                            onClick={() => handleEdit(log)}
                             className="text-blue-600 hover:underline text-xs"
                           >
                             編輯
@@ -545,83 +611,85 @@ const handleEditSave = () => {
             )}
 
             {/* Modal 區塊 */}
-            {modalOpen && (
+            {showModal && (
               <div className="modal-overlay">
-    <div className="modal-content">
-      <h2 className="text-lg font-bold mb-4">✏️ 編輯紀錄</h2>
+                <div className={`modal-content ${isClosing ? "closing" : ""}`}>
+                  <h2 className="text-lg font-bold mb-4">✏️ 編輯紀錄</h2>
 
-      <div className="form-group">
-        <label>選擇日期：</label>
-        <p className="mb-2 text-sm text-gray-600">{selectedDate.toDateString()}</p>
-      </div>
+                  <div className="form-group">
+                    <label>選擇日期：</label>
+                    <p className="mb-2 text-sm text-gray-600">
+                      {selectedDate.toDateString()}
+                    </p>
+                  </div>
 
-      <div className="form-group">
-        <label>起始時間：</label>
-        <input
-          type="time"
-          value={startTime}
-          onChange={(e) => setStartTime(e.target.value)}
-        />
-      </div>
+                  <div className="form-group">
+                    <label>起始時間：</label>
+                    <input
+                      type="time"
+                      value={editingStartTime}
+                      onChange={(e) => setEditingStartTime(e.target.value)}
+                    />
+                  </div>
 
-      <div className="form-group">
-        <label>結束時間：</label>
-        <input
-          type="time"
-          value={endTime}
-          onChange={(e) => setEndTime(e.target.value)}
-        />
-      </div>
+                  <div className="form-group">
+                    <label>結束時間：</label>
+                    <input
+                      type="time"
+                      value={editingEndTime}
+                      onChange={(e) => setEditingEndTime(e.target.value)}
+                    />
+                  </div>
 
-      <div className="form-group">
-        <label>時薪：</label>
-        <input
-          type="number"
-          value={hourlyRate}
-          onChange={(e) => setHourlyRate(Number(e.target.value))}
-        />
-      </div>
+                  <div className="form-group">
+                    <label>時薪：</label>
+                    <input
+                      type="number"
+                      value={hourlyRate}
+                      onChange={(e) => setHourlyRate(Number(e.target.value))}
+                    />
+                  </div>
 
-      <div className="form-group">
-        <label>稅率（%）：</label>
-        <input
-          type="number"
-          value={taxRate}
-          onChange={(e) => setTaxRate(Number(e.target.value))}
-        />
-      </div>
+                  <div className="form-group">
+                    <label>稅率（%）：</label>
+                    <input
+                      type="number"
+                      value={taxRate}
+                      onChange={(e) => setTaxRate(Number(e.target.value))}
+                    />
+                  </div>
 
-      <div className="form-group flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={rested}
-          onChange={(e) => setRested(e.target.checked)}
-        />
-        <label>今天有休息半小時</label>
-      </div>
+                  <div className="form-group flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={editingHasBreak}
+                      onChange={(e) => setEditingHasBreak(e.target.checked)}
+                    />
+                    <label>今天有休息半小時</label>
+                  </div>
 
-      <div className="flex justify-end gap-2 mt-4">
-        <button
-          onClick={() => setShowModal(false)}
-          className="bg-gray-400 text-white px-4 py-2 rounded"
-        >
-          取消
-        </button>
-        <button
-          onClick={handleEditSave}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          儲存
-        </button>
-      </div>
-    </div>
-  </div>
+                  <div className="flex justify-end gap-2 mt-4">
+                    <button
+                      onClick={() => setShowModal(false)}
+                      className="bg-gray-400 text-white px-4 py-2 rounded"
+                    >
+                      取消
+                    </button>
+                    <button
+                      onClick={handleEditSave}
+                      className="bg-blue-600 text-white px-4 py-2 rounded"
+                    >
+                      儲存
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </>
         )}
       </div>
     </div>
   );
-}
+}};
 
-export default App;
+export default ThemeToggle;;
