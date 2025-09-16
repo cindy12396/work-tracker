@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import "./App.css";
@@ -255,26 +255,9 @@ function App() {
   }, [darkMode]);
   const [activeButton, setActiveButton] = useState("add_time");
 
-  // 背景顏色
-  const ThemeToggle = () => {
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem("theme");
-    if (saved) return saved === "dark";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [darkMode]);
-
   return (
     <div className={`${darkMode ? "dark" : ""}`}>
+      <ThemeToggle />
       <div className="">
         <button
           onClick={() => setDarkMode(!darkMode)}
@@ -690,6 +673,6 @@ function App() {
       </div>
     </div>
   );
-}};
+}
 
-export default ThemeToggle;;
+export default App;
