@@ -547,92 +547,75 @@ const handleEditSave = () => {
             {/* Modal 區塊 */}
             {modalOpen && (
               <div className="modal-overlay">
-                <div className="modal-container">
-                  <h3 className="modal-title">✏️ 編輯紀錄</h3>
+    <div className="modal-content">
+      <h2 className="text-lg font-bold mb-4">✏️ 編輯紀錄</h2>
 
-                  {/* 起始時間 */}
-                  <div className="coolinput">
-                    <label className="text">起始時間:</label>
-                    <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                    />
-                  </div>
+      <div className="form-group">
+        <label>選擇日期：</label>
+        <p className="mb-2 text-sm text-gray-600">{selectedDate.toDateString()}</p>
+      </div>
 
-                  {/* 結束時間 */}
-                  <div className="coolinput">
-                    <label className="text">結束時間:</label>
-                    <input
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                    />
-                  </div>
+      <div className="form-group">
+        <label>起始時間：</label>
+        <input
+          type="time"
+          value={startTime}
+          onChange={(e) => setStartTime(e.target.value)}
+        />
+      </div>
 
-                  {/* ✅ 時薪 */}
-                  <div className="coolinput">
-                    <label className="text">時薪:</label>
-                    <input
-                      type="number"
-                      value={hourlyRate}
-                      onChange={(e) => {
-                        const newRate = Number(e.target.value);
-                        setHourlyRate(newRate);
-                        if (user) saveUserHourlyRate(user.email, newRate);
-                      }}
-                    />
-                  </div>
+      <div className="form-group">
+        <label>結束時間：</label>
+        <input
+          type="time"
+          value={endTime}
+          onChange={(e) => setEndTime(e.target.value)}
+        />
+      </div>
 
-                  {/* ✅ 稅率 */}
-                  <div className="coolinput">
-                    <label className="text">稅率%:</label>
-                    <input
-                      type="number"
-                      value={taxRate}
-                      onChange={(e) => {
-                        const newRate = Number(e.target.value);
-                        setTaxRate(newRate);
-                        if (user) saveUserTaxRate(user.email, newRate);
-                      }}
-                    />
-                  </div>
+      <div className="form-group">
+        <label>時薪：</label>
+        <input
+          type="number"
+          value={hourlyRate}
+          onChange={(e) => setHourlyRate(Number(e.target.value))}
+        />
+      </div>
 
-                  {/* ✅ 是否有休息 */}
-                  <div className="coolinput flex items-center gap-2 mt-2">
-                    <input
-                      type="checkbox"
-                      id="rested"
-                      checked={rested}
-                      onChange={() => setRested(!rested)}
-                    />
-                    <label htmlFor="rested">今天有休息半小時</label>
-                  </div>
+      <div className="form-group">
+        <label>稅率（%）：</label>
+        <input
+          type="number"
+          value={taxRate}
+          onChange={(e) => setTaxRate(Number(e.target.value))}
+        />
+      </div>
 
-                  {/* ✅ 按鈕列 */}
-                  <div className="modal-buttons mt-4 flex justify-end gap-2">
-                    <button
-                      onClick={handleSave}
-                      className="save-btn bg-blue-600 text-white px-4 py-2 rounded"
-                    >
-                      儲存
-                    </button>
-                    <button
-                      onClick={() => setShowModal(false)}
-                      className="cancel-btn bg-gray-300 px-4 py-2 rounded"
-                    >
-                      取消
-                    </button>
-                  </div>
+      <div className="form-group flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={rested}
+          onChange={(e) => setRested(e.target.checked)}
+        />
+        <label>今天有休息半小時</label>
+      </div>
 
-                  <button
-                    className="modal-close-button"
-                    onClick={closeEditModal}
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
+      <div className="flex justify-end gap-2 mt-4">
+        <button
+          onClick={() => setShowModal(false)}
+          className="bg-gray-400 text-white px-4 py-2 rounded"
+        >
+          取消
+        </button>
+        <button
+          onClick={handleEditSave}
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          儲存
+        </button>
+      </div>
+    </div>
+  </div>
             )}
           </>
         )}
