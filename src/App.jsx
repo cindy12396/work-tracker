@@ -41,6 +41,7 @@ function App() {
   const [hasBreak, setHasBreak] = useState(false); // 有無休息
   const [modalOpen, setModalOpen] = useState(false); // 新增 modal 相關(編輯按鈕)
   const [editRecord, setEditRecord] = useState(null); // 新增 modal 相關(編輯按鈕)
+  const [rested, setRested] = useState(false);
 
   const saveUserHourlyRate = async (userEmail, rate) => {
     const ref = doc(db, "users", userEmail, "settings", "hourly");
@@ -117,8 +118,8 @@ function App() {
     let minutes = endH * 60 + endM - (startH * 60 + startM);
     if (minutes < 0) minutes += 24 * 60;
     let hours = minutes / 60;
-    if (hasBreak) {
-      hours -= 0.5;
+    if (rested) {
+      hours = Math.max(0, hours - 0.5);
     }
     return hours;
   };
@@ -151,34 +152,50 @@ function App() {
   };
 
   const handleEdit = (log) => {
-    setSelectedDate(new Date(log.date));
-    setStartTime(log.startTime);
-    setEndTime(log.endTime);
-    setHourlyRate(log.rate);
-    setEditingDate(log.date);
-  };
+  setSelectedDate(new Date(log.date));
+  setStartTime(log.startTime);
+  setEndTime(log.endTime);
+  setHourlyRate(log.rate);
+  setRested(log.rested || false);   // 預設 false
+  setTaxRate(log.taxRate || 13);    // 預設稅率
+  setEditingDate(log.date);
+  setShowModal(true);               // 打開 modal
+};
 
   // 編輯
-  const handleEditSave = () => {
-    // 根據 editRecord 的 date 或其他 unique key 更新 workLog
-    const updated = workLog.map((log) => {
-      if (log.date === editRecord.date) {
-        return {
-          ...editRecord,
-          // 確保 hours 是正確的
-          hours: calculateHoursFor(
-            editRecord.startTime,
-            editRecord.endTime,
-            editRecord.hasBreak || false
-          ),
-          rate: editRecord.rate,
-        };
-      }
-      return log;
-    });
-    setWorkLog(updated);
-    closeEditModal();
-  };
+const handleEditSave = () => {
+  let hours = calculateHours();
+  if (hours <= 0) {
+    alert("⚠️ 請輸入正確的時間！");
+    return;
+  }
+
+  if (rested) {
+    hours = Math.max(0, hours - 0.5);
+  }
+
+  const dateStr = editingDate || selectedDate.toDateString();
+  const updatedLog = workLog.filter((log) => log.date !== dateStr);
+
+  setWorkLog([
+    ...updatedLog,
+    {
+      date: dateStr,
+      startTime,
+      endTime,
+      hours,
+      rate: hourlyRate,
+      taxRate,
+      rested,
+    },
+  ]);
+
+  setStartTime("");
+  setEndTime("");
+  setEditingDate(null);
+  setShowModal(false);
+};
+
 
   // helper to 計算 hours（加入休息時間扣半小時）
   const calculateHoursFor = (startTime, endTime, hasBreak) => {
@@ -214,7 +231,7 @@ function App() {
 
   const [activeButton, setActiveButton] = useState("add_time");
   return (
-    <div className={`min-h-screen w-full h-full ${bgClass}`}>
+    <div className={`w-full h-full ${bgClass}`}>
       <div className="p-6">
         <button
           onClick={() => {
@@ -533,61 +550,76 @@ function App() {
                 <div className="modal-container">
                   <h3 className="modal-title">✏️ 編輯紀錄</h3>
 
-                  <div className="modal-form-group">
-                    <label className="modal-label">起始時間</label>
+                  {/* 起始時間 */}
+                  <div className="coolinput">
+                    <label className="text">起始時間:</label>
                     <input
                       type="time"
-                      value={editRecord?.startTime || ""}
-                      onChange={(e) =>
-                        setEditRecord({
-                          ...editRecord,
-                          startTime: e.target.value,
-                        })
-                      }
-                      className="modal-input"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
                     />
                   </div>
 
-                  <div className="modal-form-group">
-                    <label className="modal-label">結束時間</label>
+                  {/* 結束時間 */}
+                  <div className="coolinput">
+                    <label className="text">結束時間:</label>
                     <input
                       type="time"
-                      value={editRecord?.endTime || ""}
-                      onChange={(e) =>
-                        setEditRecord({
-                          ...editRecord,
-                          endTime: e.target.value,
-                        })
-                      }
-                      className="modal-input"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
                     />
                   </div>
 
-                  <div className="modal-form-group">
-                    <label className="modal-label">時薪</label>
+                  {/* ✅ 時薪 */}
+                  <div className="coolinput">
+                    <label className="text">時薪:</label>
                     <input
                       type="number"
-                      value={editRecord?.rate || ""}
-                      onChange={(e) =>
-                        setEditRecord({
-                          ...editRecord,
-                          rate: Number(e.target.value),
-                        })
-                      }
-                      className="modal-input"
+                      value={hourlyRate}
+                      onChange={(e) => {
+                        const newRate = Number(e.target.value);
+                        setHourlyRate(newRate);
+                        if (user) saveUserHourlyRate(user.email, newRate);
+                      }}
                     />
                   </div>
 
-                  <div className="modal-actions">
+                  {/* ✅ 稅率 */}
+                  <div className="coolinput">
+                    <label className="text">稅率%:</label>
+                    <input
+                      type="number"
+                      value={taxRate}
+                      onChange={(e) => {
+                        const newRate = Number(e.target.value);
+                        setTaxRate(newRate);
+                        if (user) saveUserTaxRate(user.email, newRate);
+                      }}
+                    />
+                  </div>
+
+                  {/* ✅ 是否有休息 */}
+                  <div className="coolinput flex items-center gap-2 mt-2">
+                    <input
+                      type="checkbox"
+                      id="rested"
+                      checked={rested}
+                      onChange={() => setRested(!rested)}
+                    />
+                    <label htmlFor="rested">今天有休息半小時</label>
+                  </div>
+
+                  {/* ✅ 按鈕列 */}
+                  <div className="modal-buttons mt-4 flex justify-end gap-2">
                     <button
-                      onClick={handleEditSave}
-                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                      onClick={handleSave}
+                      className="save-btn bg-blue-600 text-white px-4 py-2 rounded"
                     >
                       儲存
                     </button>
                     <button
-                      onClick={closeEditModal}
-                      className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+                      onClick={() => setShowModal(false)}
+                      className="cancel-btn bg-gray-300 px-4 py-2 rounded"
                     >
                       取消
                     </button>
