@@ -274,7 +274,7 @@ function App() {
   }, [theme]);
 
   return (
-    <div>
+    <div className="max-w-screen-sm mx-auto px-4">
       <ThemeToggle onThemeChange={handleThemeChange} /> {/* 背景 */}
       <div className="">
         {!user ? (
@@ -380,11 +380,11 @@ function App() {
             </div>
 
             {activeButton === "add_time" && (
-              <div className="add_time wrapper flex gap-4">
-                <div className={`date ${theme === "dark" ? "bg-[#fb8500] text-[#1e293b]" : "bg-[#ffffff] text-[#1e293b]"}`}>
+              <div className="add_time wrapper flex gap-4 flex flex-col md:flex-row gap-4">
+                <div className={`date md:flex-1 ${theme === "dark" ? "bg-[#fb8500] text-[#1e293b]" : "bg-[#ffffff] text-[#1e293b]"}`}>
                   <Calendar onChange={setSelectedDate} value={selectedDate} />
                 </div>
-                <div className={`modal-content ${theme === "dark" ? "bg-[#fb8500] text-[#1e293b]" : "bg-[#ffffff] text-[#1e293b]"}`}>
+                <div className={`md:flex-1modal-content ${theme === "dark" ? "bg-[#fb8500] text-[#1e293b]" : "bg-[#ffffff] text-[#1e293b]"}`}>
                   <p className="mt-4 text-center font-semibold">
                     選擇日期：{selectedDate.toDateString()}
                   </p>
@@ -465,7 +465,7 @@ function App() {
                   </div>
                 </div>
 
-                <div className={`two_week ${theme === "dark" ? "bg-[#fb8500] text-[#1e293b]" : "bg-[#ffffff] text-[#1e293b]"}`}>
+                <div className={`two_week md:flex-1 ${theme === "dark" ? "bg-[#fb8500] text-[#1e293b]" : "bg-[#ffffff] text-[#1e293b]"}`}>
                   <h2 className="font-bold mb-2">🧾 兩週統計</h2>
                   <p>
                     總工時：<strong>{totalHours.toFixed(2)}</strong> 小時
