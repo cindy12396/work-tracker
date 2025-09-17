@@ -25,7 +25,7 @@ import {
 } from "recharts";
 
 function App() {
-  const [darkMode, setDarkMode] = useState(false); //背景
+  const [theme, setTheme] = useState("light"); //背景
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -250,21 +250,33 @@ function App() {
     }, 200); // 跟 CSS 動畫時長一致
   };
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
   const [activeButton, setActiveButton] = useState("add_time");
 
+  // 背景，我直接使用body來做背景顏色切換
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+  };
+  useEffect(() => {
+    if (!document?.body) return;
+
+    document.body.classList.remove(
+      "bg-white",
+      "bg-[#1e293b]",
+      "text-black",
+      "text-white"
+    );
+
+    if (theme === "dark") {
+      document.body.classList.add("bg-[#1e293b]", "text-white");
+    } else {
+      document.body.classList.add("bg-white", "text-black");
+    }
+  }, [theme]);
+
   return (
-    <div className={`${darkMode ? "dark" : ""}`}>
-      <ThemeToggle />
+    <div>
+      <ThemeToggle onThemeChange={handleThemeChange} /> {/* 背景 */}
       <div className="">
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="px-3 py-1 bg-gray-200 text-sm rounded shadow mb-4"
-        >
-          {darkMode ? "🌞 淺色模式" : "🌙 深色模式"}
-        </button>
         {!user ? (
           <>
             <h2 className="text-xl font-bold mb-4">🔐 請登入</h2>
@@ -359,18 +371,20 @@ function App() {
             {/* ---------------------------分頁按鈕css---start------------------------*/}
 
             <div className="flex justify-between items-center mb-4">
-              <h1 className="text-xl font-bold">🧮 {user.email} 的工時紀錄</h1>
+              <h1 className={theme === "dark" ? "text-[#c4d5f1]" : "text-black"}>
+                🧮 {user.email} 的工時紀錄
+              </h1>
               <article className="keycap" onClick={logout}>
                 <aside className="letter">登出</aside>
               </article>
             </div>
 
             {activeButton === "add_time" && (
-              <div className="add_time wrapper">
-                <div className="date">
+              <div className="add_time wrapper flex gap-4">
+                <div className={`date ${theme === "dark" ? "bg-[#fb8500] text-[#1e293b]" : "bg-[#ffffff] text-[#1e293b]"}`}>
                   <Calendar onChange={setSelectedDate} value={selectedDate} />
                 </div>
-                <div className="modal-content">
+                <div className={`modal-content ${theme === "dark" ? "bg-[#fb8500] text-[#1e293b]" : "bg-[#ffffff] text-[#1e293b]"}`}>
                   <p className="mt-4 text-center font-semibold">
                     選擇日期：{selectedDate.toDateString()}
                   </p>
@@ -451,7 +465,7 @@ function App() {
                   </div>
                 </div>
 
-                <div className="mt-6 two_week">
+                <div className={`two_week ${theme === "dark" ? "bg-[#fb8500] text-[#1e293b]" : "bg-[#ffffff] text-[#1e293b]"}`}>
                   <h2 className="font-bold mb-2">🧾 兩週統計</h2>
                   <p>
                     總工時：<strong>{totalHours.toFixed(2)}</strong> 小時
